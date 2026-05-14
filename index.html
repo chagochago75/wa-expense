@@ -1064,7 +1064,7 @@ async function exportReceiptPdf(category) {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Weigh Anchor}`, margin, 12);
+      doc.text(`Weigh Anchor`, margin, 12);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text(`${exportYear}/${exportMonth} (${i+1}/${expenses.length})`, pageW - margin, 12, { align: 'right' });
