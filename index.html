@@ -675,17 +675,33 @@ function handleReceiptImage(event) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    currentReceiptImage = e.target.result; // base64
-    const preview = document.getElementById('receipt-preview');
-    const placeholder = document.getElementById('receipt-placeholder');
-    const clearBtn = document.getElementById('receipt-clear');
-    const area = document.getElementById('receipt-area');
+    // 画像を圧縮してからbase64保存
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 1200; // 最大1200px
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      currentReceiptImage = canvas.toDataURL('image/jpeg', 0.7); // 70%品質で圧縮
 
-    preview.src = currentReceiptImage;
-    preview.classList.add('visible');
-    placeholder.style.display = 'none';
-    clearBtn.classList.add('visible');
-    area.classList.add('has-image');
+      const preview = document.getElementById('receipt-preview');
+      const placeholder = document.getElementById('receipt-placeholder');
+      const clearBtn = document.getElementById('receipt-clear');
+      const area = document.getElementById('receipt-area');
+
+      preview.src = currentReceiptImage;
+      preview.classList.add('visible');
+      placeholder.style.display = 'none';
+      clearBtn.classList.add('visible');
+      area.classList.add('has-image');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -733,9 +749,16 @@ function saveExpense() {
     reason, store,
     invoice: invoiceValue,
     receiptNo,
-    receiptImage: currentReceiptImage // base64 or null
+    receiptImage: currentReceiptImage
   });
-  saveExpenses(expenses);
+  try {
+    saveExpenses(expenses);
+  } catch(err) {
+    expenses[expenses.length - 1].receiptImage = null;
+    saveExpenses(expenses);
+    showToast('画像が大きすぎるため画像なしで保存しました');
+    return;
+  }
 
   // フォームリセット
   document.getElementById('input-category').value = '';
