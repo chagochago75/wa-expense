@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg width='512' height='512' viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='512' height='512' rx='114' fill='%231B2A4A'/%3E%3Ctext x='256' y='310' text-anchor='middle' font-family='-apple-system, Helvetica Neue, Arial, sans-serif' font-size='200' font-weight='900' fill='white' letter-spacing='6'%3EWA%3C/text%3E%3Crect x='86' y='352' width='340' height='74' rx='14' fill='rgba(255,255,255,0.15)'/%3E%3Ctext x='256' y='400' text-anchor='middle' font-family='-apple-system, Helvetica Neue, Arial, sans-serif' font-size='32' font-weight='600' fill='rgba(255,255,255,0.9)' letter-spacing='6'%3EEXPENSE%3C/text%3E%3C/svg%3E">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="WA経費">
 <title>経費精算 - Weigh Anchor</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
     --green: #1D9E75;
@@ -38,7 +36,6 @@
     position: relative;
   }
 
-  /* ヘッダー */
   .header {
     background: var(--white);
     border-bottom: 1px solid var(--gray-100);
@@ -51,25 +48,11 @@
     justify-content: space-between;
   }
 
-  .header-title {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
+  .header-title { font-size: 17px; font-weight: 600; color: var(--gray-900); }
+  .header-sub { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
 
-  .header-sub {
-    font-size: 12px;
-    color: var(--gray-500);
-    margin-top: 1px;
-  }
+  .main { padding: 16px; padding-bottom: 100px; }
 
-  /* メインコンテンツ */
-  .main {
-    padding: 16px;
-    padding-bottom: 100px;
-  }
-
-  /* セクション */
   .section {
     background: var(--white);
     border-radius: var(--radius);
@@ -84,15 +67,12 @@
     font-weight: 600;
     color: var(--gray-500);
     letter-spacing: 0.05em;
-    text-transform: none;
   }
 
-  /* フォーム */
   .form-group {
     padding: 10px 16px;
     border-bottom: 1px solid var(--gray-100);
   }
-
   .form-group:last-child { border-bottom: none; }
 
   .form-label {
@@ -127,7 +107,6 @@
     transition: border-color 0.15s;
     font-family: inherit;
   }
-
   .form-input:focus { border-color: var(--green); }
 
   select.form-input {
@@ -136,6 +115,55 @@
     background-position: right 12px center;
     padding-right: 32px;
   }
+
+  /* レシート撮影エリア */
+  .receipt-upload-area {
+    margin: 0 16px 10px;
+    border: 2px dashed var(--gray-300);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--gray-50);
+    position: relative;
+  }
+  .receipt-upload-area:active { background: var(--green-light); border-color: var(--green); }
+  .receipt-upload-area.has-image { border-style: solid; border-color: var(--green); background: var(--green-light); }
+
+  .receipt-upload-icon { font-size: 32px; margin-bottom: 6px; }
+  .receipt-upload-text { font-size: 13px; color: var(--gray-500); }
+  .receipt-upload-sub { font-size: 11px; color: var(--gray-300); margin-top: 3px; }
+
+  .receipt-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    display: none;
+  }
+  .receipt-preview.visible { display: block; }
+
+  .receipt-clear-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gray-700);
+    color: white;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .receipt-clear-btn.visible { display: flex; }
+
+  #receipt-input { display: none; }
 
   /* インボイストグル */
   .toggle-wrap {
@@ -159,20 +187,9 @@
     color: var(--gray-500);
     font-family: inherit;
   }
+  .toggle-btn.active-yes { background: var(--white); color: var(--green-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .toggle-btn.active-no { background: var(--white); color: var(--red-dark); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-  .toggle-btn.active-yes {
-    background: var(--white);
-    color: var(--green-dark);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-
-  .toggle-btn.active-no {
-    background: var(--white);
-    color: var(--red-dark);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-
-  /* 保存ボタン */
   .save-btn {
     width: 100%;
     padding: 14px;
@@ -187,7 +204,6 @@
     transition: background 0.15s;
     margin-bottom: 12px;
   }
-
   .save-btn:active { background: var(--green-dark); }
 
   /* 履歴 */
@@ -219,17 +235,10 @@
     cursor: pointer;
     transition: background 0.1s;
   }
-
   .history-item:last-child { border-bottom: none; }
   .history-item:active { background: var(--gray-50); }
 
-  .cat-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
+  .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .history-info { flex: 1; min-width: 0; }
 
   .history-title {
@@ -256,22 +265,32 @@
     border-radius: 3px;
     font-weight: 500;
   }
-
   .invoice-badge.yes { background: var(--green-light); color: var(--green-dark); }
   .invoice-badge.no { background: var(--red-light); color: var(--red-dark); }
 
-  .history-right { text-align: right; flex-shrink: 0; }
-
-  .history-amount {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--gray-900);
+  .receipt-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    background: #EEF2FF;
+    color: #3730A3;
   }
 
-  .history-date {
+  .history-right { text-align: right; flex-shrink: 0; }
+  .history-amount { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+  .history-date { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+  .delete-btn {
+    padding: 2px 8px;
     font-size: 11px;
-    color: var(--gray-500);
-    margin-top: 2px;
+    color: var(--red-dark);
+    background: var(--red-light);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-left: 8px;
   }
 
   /* 出力画面 */
@@ -295,19 +314,9 @@
     justify-content: center;
     color: var(--gray-700);
   }
-
   .month-nav-btn:active { background: var(--gray-100); }
 
-  .month-display {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-
-  .summary-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+  .month-display { font-size: 17px; font-weight: 600; color: var(--gray-900); }
 
   .summary-row {
     display: flex;
@@ -317,7 +326,6 @@
     border-bottom: 1px solid var(--gray-100);
     font-size: 14px;
   }
-
   .summary-row:last-child { border-bottom: none; }
   .summary-label { color: var(--gray-700); }
   .summary-value { font-weight: 600; color: var(--gray-900); }
@@ -352,9 +360,10 @@
     margin-bottom: 12px;
     transition: background 0.15s;
   }
-
   .export-btn:active { background: var(--green-dark); }
   .export-btn:disabled { background: var(--gray-300); cursor: not-allowed; }
+  .export-btn.pdf-btn { background: #3730A3; }
+  .export-btn.pdf-btn:active { background: #312E81; }
 
   .export-icon { font-size: 20px; }
 
@@ -387,18 +396,13 @@
     transition: color 0.15s;
     color: var(--gray-500);
   }
-
   .nav-item.active { color: var(--green); }
-
   .nav-icon { font-size: 22px; }
-
   .nav-label { font-size: 10px; font-weight: 500; }
 
-  /* 画面切り替え */
   .screen { display: none; }
   .screen.active { display: block; }
 
-  /* トースト通知 */
   .toast {
     position: fixed;
     top: 80px;
@@ -415,39 +419,55 @@
     z-index: 200;
     white-space: nowrap;
   }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* 空状態 */
-  .empty-state {
-    text-align: center;
-    padding: 48px 16px;
-    color: var(--gray-500);
-  }
-
+  .empty-state { text-align: center; padding: 48px 16px; color: var(--gray-500); }
   .empty-icon { font-size: 48px; margin-bottom: 12px; }
   .empty-text { font-size: 14px; }
 
-  /* 削除ボタン */
-  .delete-btn {
-    padding: 2px 8px;
+  /* PDF出力セクション */
+  .pdf-section-title {
+    padding: 12px 16px 8px;
     font-size: 11px;
-    color: var(--red-dark);
-    background: var(--red-light);
+    font-weight: 600;
+    color: var(--gray-500);
+    letter-spacing: 0.05em;
+  }
+
+  .pdf-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+  }
+  .pdf-cat-row:last-child { border-bottom: none; }
+  .pdf-cat-left { display: flex; align-items: center; gap: 8px; }
+  .pdf-cat-count {
+    font-size: 11px;
+    background: #EEF2FF;
+    color: #3730A3;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .pdf-cat-count.zero { background: var(--gray-100); color: var(--gray-300); }
+  .pdf-cat-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3730A3;
+    background: #EEF2FF;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-family: inherit;
-    margin-left: 8px;
   }
+  .pdf-cat-btn:disabled { color: var(--gray-300); background: var(--gray-100); cursor: not-allowed; }
 </style>
 </head>
 <body>
 
-<!-- ヘッダー -->
 <div class="header">
   <div>
     <div class="header-title" id="header-title">経費を入力</div>
@@ -455,12 +475,29 @@
   </div>
 </div>
 
-<!-- トースト -->
 <div class="toast" id="toast"></div>
 
 <!-- ① 入力画面 -->
 <div class="screen active" id="screen-input">
   <div class="main">
+
+    <!-- レシート撮影エリア -->
+    <div class="section">
+      <div class="section-header">レシート撮影（任意）</div>
+      <div style="padding: 10px 0 4px;">
+        <div class="receipt-upload-area" id="receipt-area" onclick="document.getElementById('receipt-input').click()">
+          <div id="receipt-placeholder">
+            <div class="receipt-upload-icon">📸</div>
+            <div class="receipt-upload-text">タップして撮影 / 画像を選択</div>
+            <div class="receipt-upload-sub">レシートをそのまま保存します</div>
+          </div>
+          <img class="receipt-preview" id="receipt-preview" />
+          <button class="receipt-clear-btn" id="receipt-clear" onclick="clearReceipt(event)">×</button>
+        </div>
+        <input type="file" id="receipt-input" accept="image/*" capture="environment" onchange="handleReceiptImage(event)">
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-header">基本情報</div>
       <div class="form-group">
@@ -527,9 +564,7 @@
 
 <!-- ② 履歴画面 -->
 <div class="screen" id="screen-history">
-  <div class="main" id="history-list">
-    <!-- JSで生成 -->
-  </div>
+  <div class="main" id="history-list"></div>
 </div>
 
 <!-- ③ 出力画面 -->
@@ -550,6 +585,12 @@
         <span>支出合計</span>
         <span id="summary-total">¥0</span>
       </div>
+    </div>
+
+    <!-- レシートPDF出力 -->
+    <div class="section">
+      <div class="pdf-section-title">📸 レシートPDF出力（科目別）</div>
+      <div id="pdf-cat-rows"></div>
     </div>
 
     <button class="export-btn" onclick="exportExcel('あり')" id="btn-export-yes">
@@ -578,27 +619,22 @@
 </nav>
 
 <script>
-// ============================
-// データ管理
-// ============================
 const STORAGE_KEY = 'weigh_anchor_expenses';
 
 function loadExpenses() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
 }
 
 function saveExpenses(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// ============================
 // 初期化
-// ============================
 let invoiceValue = true;
 let exportYear = new Date().getFullYear();
 let exportMonth = new Date().getMonth() + 1;
+let currentReceiptImage = null; // base64
 
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date();
@@ -609,31 +645,64 @@ window.addEventListener('DOMContentLoaded', () => {
   updateExportMonth();
 });
 
-// ============================
 // 画面切り替え
-// ============================
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
-
   const titles = { input: '経費を入力', history: '履歴', export: 'Excel出力' };
   document.getElementById('header-title').textContent = titles[name];
-
   if (name === 'history') renderHistory();
-  if (name === 'export') renderSummary();
+  if (name === 'export') { renderSummary(); renderPdfCatRows(); }
 }
 
-// ============================
 // インボイストグル
-// ============================
 function setInvoice(val) {
   invoiceValue = val;
   const yes = document.getElementById('toggle-yes');
   const no = document.getElementById('toggle-no');
   yes.className = 'toggle-btn' + (val ? ' active-yes' : '');
   no.className = 'toggle-btn' + (!val ? ' active-no' : '');
+}
+
+// ============================
+// レシート画像処理
+// ============================
+function handleReceiptImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    currentReceiptImage = e.target.result; // base64
+    const preview = document.getElementById('receipt-preview');
+    const placeholder = document.getElementById('receipt-placeholder');
+    const clearBtn = document.getElementById('receipt-clear');
+    const area = document.getElementById('receipt-area');
+
+    preview.src = currentReceiptImage;
+    preview.classList.add('visible');
+    placeholder.style.display = 'none';
+    clearBtn.classList.add('visible');
+    area.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearReceipt(event) {
+  event.stopPropagation();
+  currentReceiptImage = null;
+  const preview = document.getElementById('receipt-preview');
+  const placeholder = document.getElementById('receipt-placeholder');
+  const clearBtn = document.getElementById('receipt-clear');
+  const area = document.getElementById('receipt-area');
+  preview.src = '';
+  preview.classList.remove('visible');
+  placeholder.style.display = '';
+  clearBtn.classList.remove('visible');
+  area.classList.remove('has-image');
+  document.getElementById('receipt-input').value = '';
 }
 
 // ============================
@@ -651,7 +720,6 @@ function saveExpense() {
     showToast('⚠️ 必須項目を入力してください');
     return;
   }
-
   if (parseInt(amount) <= 0) {
     showToast('⚠️ 金額を正しく入力してください');
     return;
@@ -660,13 +728,12 @@ function saveExpense() {
   const expenses = loadExpenses();
   expenses.push({
     id: Date.now(),
-    date,
-    category,
+    date, category,
     amount: parseInt(amount),
-    reason,
-    store,
+    reason, store,
     invoice: invoiceValue,
-    receiptNo
+    receiptNo,
+    receiptImage: currentReceiptImage // base64 or null
   });
   saveExpenses(expenses);
 
@@ -677,6 +744,7 @@ function saveExpense() {
   document.getElementById('input-store').value = '';
   document.getElementById('input-receipt-no').value = '';
   setInvoice(true);
+  clearReceipt({ stopPropagation: () => {} });
 
   showToast('✓ 保存しました');
 }
@@ -685,19 +753,10 @@ function saveExpense() {
 // 履歴表示
 // ============================
 const CAT_COLORS = {
-  '交通費': '#378ADD',
-  '消耗品費': '#EF9F27',
-  '会議費': '#1D9E75',
-  '通信費': '#7F77DD',
-  '従業員食事代': '#D4537E',
-  '食事代（1万円以上）': '#D4537E',
-  '広告宣伝費': '#D85A30',
-  '書籍・資料費': '#639922',
-  '旅費・合宿費': '#185FA5',
-  '慶弔費・謝礼': '#BA7517',
-  '福利厚生費': '#0F6E56',
-  'ガソリン代': '#5F5E5A',
-  '雑費': '#888780',
+  '交通費': '#378ADD', '消耗品費': '#EF9F27', '会議費': '#1D9E75',
+  '通信費': '#7F77DD', '従業員食事代': '#D4537E', '食事代（1万円以上）': '#D4537E',
+  '広告宣伝費': '#D85A30', '書籍・資料費': '#639922', '旅費・合宿費': '#185FA5',
+  '慶弔費・謝礼': '#BA7517', '福利厚生費': '#0F6E56', 'ガソリン代': '#5F5E5A', '雑費': '#888780',
 };
 
 function renderHistory() {
@@ -709,10 +768,7 @@ function renderHistory() {
     return;
   }
 
-  // 日付降順ソート
   const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
-
-  // 月ごとにグループ化
   const groups = {};
   sorted.forEach(e => {
     const key = e.date.slice(0, 7);
@@ -729,7 +785,6 @@ function renderHistory() {
     html += `<div class="section">`;
     items.forEach(e => {
       const color = CAT_COLORS[e.category] || '#888780';
-      const dateStr = formatDateJP(e.date);
       html += `
         <div class="history-item">
           <div class="cat-dot" style="background:${color}"></div>
@@ -737,12 +792,13 @@ function renderHistory() {
             <div class="history-title">${e.reason}${e.store ? '・' + e.store : ''}</div>
             <div class="history-meta">
               ${e.category}
-              <span class="invoice-badge ${e.invoice ? 'yes' : 'no'}">${e.invoice ? 'インボイスあり' : 'インボイスなし'}</span>
+              <span class="invoice-badge ${e.invoice ? 'yes' : 'no'}">${e.invoice ? 'インボイスあり' : 'なし'}</span>
+              ${e.receiptImage ? '<span class="receipt-badge">📸 画像あり</span>' : ''}
             </div>
           </div>
           <div class="history-right">
             <div class="history-amount">¥${e.amount.toLocaleString()}</div>
-            <div class="history-date">${dateStr}</div>
+            <div class="history-date">${formatDateJP(e.date)}</div>
             <button class="delete-btn" onclick="deleteExpense(${e.id})">削除</button>
           </div>
         </div>`;
@@ -767,6 +823,7 @@ function deleteExpense(id) {
 function updateExportMonth() {
   document.getElementById('export-month-label').textContent = `${exportYear}年${exportMonth}月`;
   renderSummary();
+  renderPdfCatRows();
 }
 
 function changeMonth(delta) {
@@ -777,6 +834,7 @@ function changeMonth(delta) {
 }
 
 const SUMMARY_CATS = ['交通費', '消耗品費', '会議費', '通信費', 'その他'];
+const ALL_CATS = ['交通費', '消耗品費', '会議費', '通信費', '従業員食事代', '食事代（1万円以上）', '広告宣伝費', '書籍・資料費', '旅費・合宿費', '慶弔費・謝礼', '福利厚生費', 'ガソリン代', '雑費'];
 
 function getMonthExpenses() {
   const mm = String(exportMonth).padStart(2, '0');
@@ -787,30 +845,137 @@ function getMonthExpenses() {
 function renderSummary() {
   const expenses = getMonthExpenses();
   const totals = { '交通費': 0, '消耗品費': 0, '会議費': 0, '通信費': 0, 'その他': 0 };
-
-  expenses.forEach(e => {
-    const col = getExcelColumn(e.category);
-    totals[col] = (totals[col] || 0) + e.amount;
-  });
-
+  expenses.forEach(e => { const col = getExcelColumn(e.category); totals[col] = (totals[col] || 0) + e.amount; });
   const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
-
   let html = '';
   SUMMARY_CATS.forEach(cat => {
     const v = totals[cat] || 0;
     html += `<div class="summary-row"><span class="summary-label">${cat}</span><span class="summary-value ${v === 0 ? 'zero' : ''}">¥${v.toLocaleString()}</span></div>`;
   });
-
   document.getElementById('summary-rows').innerHTML = html;
   document.getElementById('summary-total').textContent = `¥${grandTotal.toLocaleString()}`;
+}
+
+// ============================
+// 科目別PDF出力リスト表示
+// ============================
+function renderPdfCatRows() {
+  const expenses = getMonthExpenses();
+  let html = '';
+  ALL_CATS.forEach(cat => {
+    const items = expenses.filter(e => e.category === cat && e.receiptImage);
+    const color = CAT_COLORS[cat] || '#888780';
+    const hasItems = items.length > 0;
+    html += `
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:${color}"></div>
+          <span style="font-size:14px;color:var(--gray-700)">${cat}</span>
+          <span class="pdf-cat-count ${hasItems ? '' : 'zero'}">${items.length}枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf('${cat}')" ${hasItems ? '' : 'disabled'}>
+          PDF出力
+        </button>
+      </div>`;
+  });
+  document.getElementById('pdf-cat-rows').innerHTML = html;
+}
+
+// ============================
+// レシートPDF生成
+// ============================
+async function exportReceiptPdf(category) {
+  const expenses = getMonthExpenses().filter(e => e.category === category && e.receiptImage);
+  if (expenses.length === 0) {
+    showToast('レシート画像がありません');
+    return;
+  }
+
+  showToast('📄 PDF生成中...');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW = 210;
+    const pageH = 297;
+    const margin = 10;
+
+    for (let i = 0; i < expenses.length; i++) {
+      const e = expenses[i];
+      if (i > 0) doc.addPage();
+
+      // ヘッダー
+      doc.setFillColor(29, 158, 117);
+      doc.rect(0, 0, pageW, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Weigh Anchor - ${category}`, margin, 12);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${exportYear}年${exportMonth}月 (${i+1}/${expenses.length})`, pageW - margin, 12, { align: 'right' });
+
+      // 情報
+      doc.setTextColor(68, 68, 65);
+      doc.setFontSize(9);
+      let y = 26;
+      const info = [
+        ['日付', formatDateJP(e.date)],
+        ['金額', `¥${e.amount.toLocaleString()}`],
+        ['事由', e.reason],
+        e.store ? ['店舗名', e.store] : null,
+        ['インボイス', e.invoice ? 'あり' : 'なし'],
+      ].filter(Boolean);
+
+      info.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(value), margin + 22, y);
+        y += 6;
+      });
+
+      // 区切り線
+      doc.setDrawColor(200, 199, 194);
+      doc.line(margin, y + 2, pageW - margin, y + 2);
+      y += 8;
+
+      // レシート画像
+      const imgData = e.receiptImage;
+      const imgType = imgData.includes('image/png') ? 'PNG' : 'JPEG';
+
+      // 画像のアスペクト比を取得して配置
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = pageW - margin * 2;
+          const maxH = pageH - y - margin;
+          const ratio = Math.min(maxW / img.width, maxH / img.height);
+          const w = img.width * ratio;
+          const h = img.height * ratio;
+          const x = (pageW - w) / 2;
+          doc.addImage(imgData, imgType, x, y, w, h);
+          resolve();
+        };
+        img.src = imgData;
+      });
+    }
+
+    const fileName = `レシート_${exportYear}年${exportMonth}月_${category}.pdf`;
+    doc.save(fileName);
+    showToast(`📄 ${fileName} を出力しました`);
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ PDF生成に失敗しました');
+  }
 }
 
 // ============================
 // Excel出力
 // ============================
 function getExcelColumn(category) {
-  const direct = ['交通費', '消耗品費', '会議費', '通信費'];
-  return direct.includes(category) ? category : 'その他';
+  return ['交通費', '消耗品費', '会議費', '通信費'].includes(category) ? category : 'その他';
 }
 
 function getExcelReason(e) {
@@ -821,60 +986,39 @@ function getExcelReason(e) {
 
 function exportExcel(invoiceType) {
   const expenses = getMonthExpenses().filter(e => (invoiceType === 'あり') === e.invoice);
-
   if (expenses.length === 0) {
     showToast(`インボイス${invoiceType}のデータがありません`);
     return;
   }
 
   const wb = XLSX.utils.book_new();
+  const rows = expenses.sort((a, b) => a.date.localeCompare(b.date)).map(e => {
+    const col = getExcelColumn(e.category);
+    return {
+      '日付': formatDateJP(e.date),
+      '交通費': col === '交通費' ? e.amount : '',
+      '消耗品費': col === '消耗品費' ? e.amount : '',
+      '会議費': col === '会議費' ? e.amount : '',
+      '通信費': col === '通信費' ? e.amount : '',
+      'その他': col === 'その他' ? e.amount : '',
+      '事由': getExcelReason(e),
+      '店舗名': e.store || '',
+      '領収書NO.': e.receiptNo || '',
+    };
+  });
 
-  // --- データ行 ---
-  const rows = expenses
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map(e => {
-      const col = getExcelColumn(e.category);
-      return {
-        '日付': formatDateJP(e.date),
-        '交通費': col === '交通費' ? e.amount : '',
-        '消耗品費': col === '消耗品費' ? e.amount : '',
-        '会議費': col === '会議費' ? e.amount : '',
-        '通信費': col === '通信費' ? e.amount : '',
-        'その他': col === 'その他' ? e.amount : '',
-        '事由': getExcelReason(e),
-        '店舗名': e.store || '',
-        '領収書NO.': e.receiptNo || '',
-      };
-    });
-
-  // 合計行
   const totals = { '交通費': 0, '消耗品費': 0, '会議費': 0, '通信費': 0, 'その他': 0 };
   expenses.forEach(e => { totals[getExcelColumn(e.category)] += e.amount; });
   const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
-
   rows.push({
-    '日付': '合計',
-    '交通費': totals['交通費'] || '',
-    '消耗品費': totals['消耗品費'] || '',
-    '会議費': totals['会議費'] || '',
-    '通信費': totals['通信費'] || '',
-    'その他': totals['その他'] || '',
-    '事由': `支出合計 ¥${grandTotal.toLocaleString()}`,
-    '店舗名': '',
-    '領収書NO.': '',
+    '日付': '合計', '交通費': totals['交通費'] || '', '消耗品費': totals['消耗品費'] || '',
+    '会議費': totals['会議費'] || '', '通信費': totals['通信費'] || '', 'その他': totals['その他'] || '',
+    '事由': `支出合計 ¥${grandTotal.toLocaleString()}`, '店舗名': '', '領収書NO.': '',
   });
 
   const ws = XLSX.utils.json_to_sheet(rows);
-
-  // 列幅
-  ws['!cols'] = [
-    { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-    { wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 10 }
-  ];
-
-  const sheetName = `インボイス登録${invoiceType}`;
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
+  ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, ws, `インボイス登録${invoiceType}`);
   const fileName = `経費精算書_${exportYear}年${exportMonth}月_インボイス${invoiceType}.xlsx`;
   XLSX.writeFile(wb, fileName);
   showToast(`📥 ${fileName} を出力しました`);
