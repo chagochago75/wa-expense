@@ -944,11 +944,11 @@ async function exportReceiptPdf(category) {
       doc.setFontSize(9);
       let y = 26;
       const info = [
-        ['日付', formatDateJP(e.date)],
-        ['金額', `¥${e.amount.toLocaleString()}`],
-        ['事由', e.reason],
-        e.store ? ['店舗名', e.store] : null,
-        ['インボイス', e.invoice ? 'あり' : 'なし'],
+        ['Date', formatDateJP(e.date)],
+        ['Amount', `JPY ${e.amount.toLocaleString()}`],
+        ['Note', e.reason],
+        e.store ? ['Store', e.store] : null,
+        ['Invoice', e.invoice ? 'Yes' : 'No'],
       ].filter(Boolean);
 
       info.forEach(([label, value]) => {
