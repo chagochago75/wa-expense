@@ -1076,9 +1076,7 @@ async function exportReceiptPdf(category) {
       const info = [
         ['Date', formatDateJP(e.date)],
         ['Amount', `JPY ${e.amount.toLocaleString()}`],
-        ['Note', e.reason],
-        e.store ? ['Store', e.store] : null,
-        ['Invoice', e.invoice ? 'Yes' : 'No'],
+            ['Invoice', e.invoice ? 'Yes' : 'No'],
       ].filter(Boolean);
 
       info.forEach(([label, value]) => {
