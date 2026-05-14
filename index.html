@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0045)file:///C:/Users/chago/Downloads/index_3.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>経費精算 - Weigh Anchor</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="./index_files/xlsx.full.min.js.ダウンロード"></script>
+<script src="./index_files/jspdf.umd.min.js.ダウンロード"></script>
 <style>
   :root {
     --green: #1D9E75;
@@ -485,13 +485,13 @@
     <div class="section">
       <div class="section-header">レシート撮影（任意）</div>
       <div style="padding: 10px 0 4px;">
-        <div class="receipt-upload-area" id="receipt-area" onclick="document.getElementById('receipt-input').click()">
+        <div class="receipt-upload-area" id="receipt-area" onclick="document.getElementById(&#39;receipt-input&#39;).click()">
           <div id="receipt-placeholder">
             <div class="receipt-upload-icon">📸</div>
             <div class="receipt-upload-text">タップして撮影 / 画像を選択</div>
             <div class="receipt-upload-sub">レシートをそのまま保存します</div>
           </div>
-          <img class="receipt-preview" id="receipt-preview" />
+          <img class="receipt-preview" id="receipt-preview">
           <button class="receipt-clear-btn" id="receipt-clear" onclick="clearReceipt(event)">×</button>
         </div>
         <input type="file" id="receipt-input" accept="image/*" capture="environment" onchange="handleReceiptImage(event)">
@@ -580,7 +580,7 @@
 
     <div class="section">
       <div class="section-header">集計プレビュー</div>
-      <div id="summary-rows"></div>
+      <div id="summary-rows"><div class="summary-row"><span class="summary-label">交通費</span><span class="summary-value zero">¥0</span></div><div class="summary-row"><span class="summary-label">消耗品費</span><span class="summary-value zero">¥0</span></div><div class="summary-row"><span class="summary-label">会議費</span><span class="summary-value zero">¥0</span></div><div class="summary-row"><span class="summary-label">通信費</span><span class="summary-value zero">¥0</span></div><div class="summary-row"><span class="summary-label">その他</span><span class="summary-value zero">¥0</span></div></div>
       <div class="summary-total">
         <span>支出合計</span>
         <span id="summary-total">¥0</span>
@@ -590,13 +590,143 @@
     <!-- レシートPDF出力 -->
     <div class="section">
       <div class="pdf-section-title">📸 レシートPDF出力（科目別）</div>
-      <div id="pdf-cat-rows"></div>
+      <div id="pdf-cat-rows">
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#378ADD"></div>
+          <span style="font-size:14px;color:var(--gray-700)">交通費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;交通費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#EF9F27"></div>
+          <span style="font-size:14px;color:var(--gray-700)">消耗品費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;消耗品費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#1D9E75"></div>
+          <span style="font-size:14px;color:var(--gray-700)">会議費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;会議費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#7F77DD"></div>
+          <span style="font-size:14px;color:var(--gray-700)">通信費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;通信費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#D4537E"></div>
+          <span style="font-size:14px;color:var(--gray-700)">従業員食事代</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;従業員食事代&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#D4537E"></div>
+          <span style="font-size:14px;color:var(--gray-700)">食事代（1万円以上）</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;食事代（1万円以上）&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#D85A30"></div>
+          <span style="font-size:14px;color:var(--gray-700)">広告宣伝費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;広告宣伝費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#639922"></div>
+          <span style="font-size:14px;color:var(--gray-700)">書籍・資料費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;書籍・資料費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#185FA5"></div>
+          <span style="font-size:14px;color:var(--gray-700)">旅費・合宿費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;旅費・合宿費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#BA7517"></div>
+          <span style="font-size:14px;color:var(--gray-700)">慶弔費・謝礼</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;慶弔費・謝礼&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#0F6E56"></div>
+          <span style="font-size:14px;color:var(--gray-700)">福利厚生費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;福利厚生費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#5F5E5A"></div>
+          <span style="font-size:14px;color:var(--gray-700)">ガソリン代</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;ガソリン代&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div>
+      <div class="pdf-cat-row">
+        <div class="pdf-cat-left">
+          <div class="cat-dot" style="background:#888780"></div>
+          <span style="font-size:14px;color:var(--gray-700)">雑費</span>
+          <span class="pdf-cat-count zero">0枚</span>
+        </div>
+        <button class="pdf-cat-btn" onclick="exportReceiptPdf(&#39;雑費&#39;)" disabled="">
+          PDF出力
+        </button>
+      </div></div>
     </div>
 
-    <button class="export-btn" onclick="exportExcel('あり')" id="btn-export-yes">
+    <button class="export-btn" onclick="exportExcel(&#39;あり&#39;)" id="btn-export-yes">
       <span class="export-icon">📥</span> インボイスあり を出力
     </button>
-    <button class="export-btn" onclick="exportExcel('なし')" id="btn-export-no">
+    <button class="export-btn" onclick="exportExcel(&#39;なし&#39;)" id="btn-export-no">
       <span class="export-icon">📥</span> インボイスなし を出力
     </button>
   </div>
@@ -604,15 +734,15 @@
 
 <!-- ボトムナビ -->
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-input" onclick="showScreen('input')">
+  <button class="nav-item active" id="nav-input" onclick="showScreen(&#39;input&#39;)">
     <span class="nav-icon">✏️</span>
     <span class="nav-label">入力</span>
   </button>
-  <button class="nav-item" id="nav-history" onclick="showScreen('history')">
+  <button class="nav-item" id="nav-history" onclick="showScreen(&#39;history&#39;)">
     <span class="nav-icon">📋</span>
     <span class="nav-label">履歴</span>
   </button>
-  <button class="nav-item" id="nav-export" onclick="showScreen('export')">
+  <button class="nav-item" id="nav-export" onclick="showScreen(&#39;export&#39;)">
     <span class="nav-icon">📊</span>
     <span class="nav-label">出力</span>
   </button>
@@ -1062,5 +1192,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 </script>
-</body>
-</html>
+
+
+</body></html>
