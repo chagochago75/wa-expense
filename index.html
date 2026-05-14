@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>経費精算 - Weigh Anchor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --red-light: #FCEBEB;
+    --red-dark: #A32D2D;
+    --gray-50: #F8F8F7;
+    --gray-100: #EFEFED;
+    --gray-300: #C8C7C2;
+    --gray-500: #888780;
+    --gray-700: #444441;
+    --gray-900: #1A1A18;
+    --white: #FFFFFF;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-100);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 1px;
+  }
+
+  /* メインコンテンツ */
+  .main {
+    padding: 16px;
+    padding-bottom: 100px;
+  }
+
+  /* セクション */
+  .section {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-100);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .section-header {
+    padding: 12px 16px 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    letter-spacing: 0.05em;
+    text-transform: none;
+  }
+
+  /* フォーム */
+  .form-group {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .form-group:last-child { border-bottom: none; }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-500);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .required-badge {
+    font-size: 10px;
+    color: var(--green-dark);
+    background: var(--green-light);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    color: var(--gray-900);
+    background: var(--white);
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  .form-input:focus { border-color: var(--green); }
+
+  select.form-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888780' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  /* インボイストグル */
+  .toggle-wrap {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 9px 0;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--gray-500);
+    font-family: inherit;
+  }
+
+  .toggle-btn.active-yes {
+    background: var(--white);
+    color: var(--green-dark);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .toggle-btn.active-no {
+    background: var(--white);
+    color: var(--red-dark);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  /* 保存ボタン */
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    margin-bottom: 12px;
+  }
+
+  .save-btn:active { background: var(--green-dark); }
+
+  /* 履歴 */
+  .history-month {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    padding: 14px 16px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .history-count {
+    font-size: 11px;
+    background: var(--gray-100);
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: var(--gray-500);
+    font-weight: 400;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+  .history-item:active { background: var(--gray-50); }
+
+  .cat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history-info { flex: 1; min-width: 0; }
+
+  .history-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-meta {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .invoice-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  .invoice-badge.yes { background: var(--green-light); color: var(--green-dark); }
+  .invoice-badge.no { background: var(--red-light); color: var(--red-dark); }
+
+  .history-right { text-align: right; flex-shrink: 0; }
+
+  .history-amount {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .history-date {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 2px;
+  }
+
+  /* 出力画面 */
+  .month-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+
+  .month-nav-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-700);
+  }
+
+  .month-nav-btn:active { background: var(--gray-100); }
+
+  .month-display {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+  }
+
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: var(--gray-700); }
+  .summary-value { font-weight: 600; color: var(--gray-900); }
+  .summary-value.zero { color: var(--gray-300); }
+
+  .summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--green-light);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+
+  .export-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    transition: background 0.15s;
+  }
+
+  .export-btn:active { background: var(--green-dark); }
+  .export-btn:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+  .export-icon { font-size: 20px; }
+
+  /* ボトムナビ */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    transition: color 0.15s;
+    color: var(--gray-500);
+  }
+
+  .nav-item.active { color: var(--green); }
+
+  .nav-icon { font-size: 22px; }
+
+  .nav-label { font-size: 10px; font-weight: 500; }
+
+  /* 画面切り替え */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* トースト通知 */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--gray-900);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* 空状態 */
+  .empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--gray-500);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* 削除ボタン */
+  .delete-btn {
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--red-dark);
+    background: var(--red-light);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <div>
+    <div class="header-title" id="header-title">経費を入力</div>
+    <div class="header-sub">Weigh Anchor</div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<!-- ① 入力画面 -->
+<div class="screen active" id="screen-input">
+  <div class="main">
+    <div class="section">
+      <div class="section-header">基本情報</div>
+      <div class="form-group">
+        <div class="form-label">日付 <span class="required-badge">必須</span></div>
+        <input type="date" class="form-input" id="input-date">
+      </div>
+      <div class="form-group">
+        <div class="form-label">科目 <span class="required-badge">必須</span></div>
+        <select class="form-input" id="input-category">
+          <option value="">選択してください</option>
+          <optgroup label="直接マッピング">
+            <option value="交通費">交通費</option>
+            <option value="消耗品費">消耗品費</option>
+            <option value="会議費">会議費</option>
+            <option value="通信費">通信費</option>
+          </optgroup>
+          <optgroup label="その他（税理士共有）">
+            <option value="従業員食事代">従業員食事代</option>
+            <option value="食事代（1万円以上）">食事代（1万円以上）</option>
+          </optgroup>
+          <optgroup label="その他">
+            <option value="広告宣伝費">広告宣伝費</option>
+            <option value="書籍・資料費">書籍・資料費</option>
+            <option value="旅費・合宿費">旅費・合宿費</option>
+            <option value="慶弔費・謝礼">慶弔費・謝礼</option>
+            <option value="福利厚生費">福利厚生費</option>
+            <option value="ガソリン代">ガソリン代</option>
+            <option value="雑費">雑費</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">金額（円） <span class="required-badge">必須</span></div>
+        <input type="number" class="form-input" id="input-amount" placeholder="例：3085" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <div class="form-label">事由 <span class="required-badge">必須</span></div>
+        <input type="text" class="form-input" id="input-reason" placeholder="例：幹部ミーティング">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">任意情報</div>
+      <div class="form-group">
+        <div class="form-label">店舗名</div>
+        <input type="text" class="form-input" id="input-store" placeholder="例：イオン">
+      </div>
+      <div class="form-group">
+        <div class="form-label">インボイス <span class="required-badge">必須</span></div>
+        <div class="toggle-wrap">
+          <button class="toggle-btn active-yes" id="toggle-yes" onclick="setInvoice(true)">✓ あり（T+13桁）</button>
+          <button class="toggle-btn" id="toggle-no" onclick="setInvoice(false)">なし</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">領収書NO.</div>
+        <input type="number" class="form-input" id="input-receipt-no" placeholder="例：001" inputmode="numeric">
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveExpense()">保存する</button>
+  </div>
+</div>
+
+<!-- ② 履歴画面 -->
+<div class="screen" id="screen-history">
+  <div class="main" id="history-list">
+    <!-- JSで生成 -->
+  </div>
+</div>
+
+<!-- ③ 出力画面 -->
+<div class="screen" id="screen-export">
+  <div class="main">
+    <div class="section">
+      <div class="month-selector">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-display" id="export-month-label">2026年5月</div>
+        <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">集計プレビュー</div>
+      <div id="summary-rows"></div>
+      <div class="summary-total">
+        <span>支出合計</span>
+        <span id="summary-total">¥0</span>
+      </div>
+    </div>
+
+    <button class="export-btn" onclick="exportExcel('あり')" id="btn-export-yes">
+      <span class="export-icon">📥</span> インボイスあり を出力
+    </button>
+    <button class="export-btn" onclick="exportExcel('なし')" id="btn-export-no">
+      <span class="export-icon">📥</span> インボイスなし を出力
+    </button>
+  </div>
+</div>
+
+<!-- ボトムナビ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-input" onclick="showScreen('input')">
+    <span class="nav-icon">✏️</span>
+    <span class="nav-label">入力</span>
+  </button>
+  <button class="nav-item" id="nav-history" onclick="showScreen('history')">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">履歴</span>
+  </button>
+  <button class="nav-item" id="nav-export" onclick="showScreen('export')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">出力</span>
+  </button>
+</nav>
+
+<script>
+// ============================
+// データ管理
+// ============================
+const STORAGE_KEY = 'weigh_anchor_expenses';
+
+function loadExpenses() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveExpenses(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ============================
+// 初期化
+// ============================
+let invoiceValue = true;
+let exportYear = new Date().getFullYear();
+let exportMonth = new Date().getMonth() + 1;
+
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
+  updateExportMonth();
+});
+
+// ============================
+// 画面切り替え
+// ============================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  const titles = { input: '経費を入力', history: '履歴', export: 'Excel出力' };
+  document.getElementById('header-title').textContent = titles[name];
+
+  if (name === 'history') renderHistory();
+  if (name === 'export') renderSummary();
+}
+
+// ============================
+// インボイストグル
+// ============================
+function setInvoice(val) {
+  invoiceValue = val;
+  const yes = document.getElementById('toggle-yes');
+  const no = document.getElementById('toggle-no');
+  yes.className = 'toggle-btn' + (val ? ' active-yes' : '');
+  no.className = 'toggle-btn' + (!val ? ' active-no' : '');
+}
+
+// ============================
+// 保存
+// ============================
+function saveExpense() {
+  const date = document.getElementById('input-date').value;
+  const category = document.getElementById('input-category').value;
+  const amount = document.getElementById('input-amount').value;
+  const reason = document.getElementById('input-reason').value.trim();
+  const store = document.getElementById('input-store').value.trim();
+  const receiptNo = document.getElementById('input-receipt-no').value.trim();
+
+  if (!date || !category || !amount || !reason) {
+    showToast('⚠️ 必須項目を入力してください');
+    return;
+  }
+
+  if (parseInt(amount) <= 0) {
+    showToast('⚠️ 金額を正しく入力してください');
+    return;
+  }
+
+  const expenses = loadExpenses();
+  expenses.push({
+    id: Date.now(),
+    date,
+    category,
+    amount: parseInt(amount),
+    reason,
+    store,
+    invoice: invoiceValue,
+    receiptNo
+  });
+  saveExpenses(expenses);
+
+  // フォームリセット
+  document.getElementById('input-category').value = '';
+  document.getElementById('input-amount').value = '';
+  document.getElementById('input-reason').value = '';
+  document.getElementById('input-store').value = '';
+  document.getElementById('input-receipt-no').value = '';
+  setInvoice(true);
+
+  showToast('✓ 保存しました');
+}
+
+// ============================
+// 履歴表示
+// ============================
+const CAT_COLORS = {
+  '交通費': '#378ADD',
+  '消耗品費': '#EF9F27',
+  '会議費': '#1D9E75',
+  '通信費': '#7F77DD',
+  '従業員食事代': '#D4537E',
+  '食事代（1万円以上）': '#D4537E',
+  '広告宣伝費': '#D85A30',
+  '書籍・資料費': '#639922',
+  '旅費・合宿費': '#185FA5',
+  '慶弔費・謝礼': '#BA7517',
+  '福利厚生費': '#0F6E56',
+  'ガソリン代': '#5F5E5A',
+  '雑費': '#888780',
+};
+
+function renderHistory() {
+  const expenses = loadExpenses();
+  const container = document.getElementById('history-list');
+
+  if (expenses.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">まだ記録がありません<br>入力画面から追加してください</div></div>`;
+    return;
+  }
+
+  // 日付降順ソート
+  const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+
+  // 月ごとにグループ化
+  const groups = {};
+  sorted.forEach(e => {
+    const key = e.date.slice(0, 7);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+
+  let html = '';
+  Object.keys(groups).sort((a,b) => b.localeCompare(a)).forEach(monthKey => {
+    const [y, m] = monthKey.split('-');
+    const items = groups[monthKey];
+    const total = items.reduce((s, e) => s + e.amount, 0);
+    html += `<div class="history-month"><span>${parseInt(y)}年${parseInt(m)}月</span><span class="history-count">${items.length}件 / ¥${total.toLocaleString()}</span></div>`;
+    html += `<div class="section">`;
+    items.forEach(e => {
+      const color = CAT_COLORS[e.category] || '#888780';
+      const dateStr = formatDateJP(e.date);
+      html += `
+        <div class="history-item">
+          <div class="cat-dot" style="background:${color}"></div>
+          <div class="history-info">
+            <div class="history-title">${e.reason}${e.store ? '・' + e.store : ''}</div>
+            <div class="history-meta">
+              ${e.category}
+              <span class="invoice-badge ${e.invoice ? 'yes' : 'no'}">${e.invoice ? 'インボイスあり' : 'インボイスなし'}</span>
+            </div>
+          </div>
+          <div class="history-right">
+            <div class="history-amount">¥${e.amount.toLocaleString()}</div>
+            <div class="history-date">${dateStr}</div>
+            <button class="delete-btn" onclick="deleteExpense(${e.id})">削除</button>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function deleteExpense(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  const expenses = loadExpenses().filter(e => e.id !== id);
+  saveExpenses(expenses);
+  renderHistory();
+  showToast('削除しました');
+}
+
+// ============================
+// 出力画面
+// ============================
+function updateExportMonth() {
+  document.getElementById('export-month-label').textContent = `${exportYear}年${exportMonth}月`;
+  renderSummary();
+}
+
+function changeMonth(delta) {
+  exportMonth += delta;
+  if (exportMonth > 12) { exportMonth = 1; exportYear++; }
+  if (exportMonth < 1) { exportMonth = 12; exportYear--; }
+  updateExportMonth();
+}
+
+const SUMMARY_CATS = ['交通費', '消耗品費', '会議費', '通信費', 'その他'];
+
+function getMonthExpenses() {
+  const mm = String(exportMonth).padStart(2, '0');
+  const prefix = `${exportYear}-${mm}`;
+  return loadExpenses().filter(e => e.date.startsWith(prefix));
+}
+
+function renderSummary() {
+  const expenses = getMonthExpenses();
+  const totals = { '交通費': 0, '消耗品費': 0, '会議費': 0, '通信費': 0, 'その他': 0 };
+
+  expenses.forEach(e => {
+    const col = getExcelColumn(e.category);
+    totals[col] = (totals[col] || 0) + e.amount;
+  });
+
+  const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
+
+  let html = '';
+  SUMMARY_CATS.forEach(cat => {
+    const v = totals[cat] || 0;
+    html += `<div class="summary-row"><span class="summary-label">${cat}</span><span class="summary-value ${v === 0 ? 'zero' : ''}">¥${v.toLocaleString()}</span></div>`;
+  });
+
+  document.getElementById('summary-rows').innerHTML = html;
+  document.getElementById('summary-total').textContent = `¥${grandTotal.toLocaleString()}`;
+}
+
+// ============================
+// Excel出力
+// ============================
+function getExcelColumn(category) {
+  const direct = ['交通費', '消耗品費', '会議費', '通信費'];
+  return direct.includes(category) ? category : 'その他';
+}
+
+function getExcelReason(e) {
+  if (e.category === '従業員食事代') return `従業員食事代 ${e.reason}`;
+  if (e.category === '食事代（1万円以上）') return `食事代 ${e.reason}`;
+  return e.reason;
+}
+
+function exportExcel(invoiceType) {
+  const expenses = getMonthExpenses().filter(e => (invoiceType === 'あり') === e.invoice);
+
+  if (expenses.length === 0) {
+    showToast(`インボイス${invoiceType}のデータがありません`);
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // --- データ行 ---
+  const rows = expenses
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(e => {
+      const col = getExcelColumn(e.category);
+      return {
+        '日付': formatDateJP(e.date),
+        '交通費': col === '交通費' ? e.amount : '',
+        '消耗品費': col === '消耗品費' ? e.amount : '',
+        '会議費': col === '会議費' ? e.amount : '',
+        '通信費': col === '通信費' ? e.amount : '',
+        'その他': col === 'その他' ? e.amount : '',
+        '事由': getExcelReason(e),
+        '店舗名': e.store || '',
+        '領収書NO.': e.receiptNo || '',
+      };
+    });
+
+  // 合計行
+  const totals = { '交通費': 0, '消耗品費': 0, '会議費': 0, '通信費': 0, 'その他': 0 };
+  expenses.forEach(e => { totals[getExcelColumn(e.category)] += e.amount; });
+  const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
+
+  rows.push({
+    '日付': '合計',
+    '交通費': totals['交通費'] || '',
+    '消耗品費': totals['消耗品費'] || '',
+    '会議費': totals['会議費'] || '',
+    '通信費': totals['通信費'] || '',
+    'その他': totals['その他'] || '',
+    '事由': `支出合計 ¥${grandTotal.toLocaleString()}`,
+    '店舗名': '',
+    '領収書NO.': '',
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // 列幅
+  ws['!cols'] = [
+    { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+    { wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 10 }
+  ];
+
+  const sheetName = `インボイス登録${invoiceType}`;
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  const fileName = `経費精算書_${exportYear}年${exportMonth}月_インボイス${invoiceType}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showToast(`📥 ${fileName} を出力しました`);
+}
+
+// ============================
+// ユーティリティ
+// ============================
+function formatDateJP(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  return `${parseInt(y)}/${parseInt(m)}/${parseInt(d)}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
